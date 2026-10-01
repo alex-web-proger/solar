@@ -208,6 +208,11 @@ const char htmlPage[] PROGMEM = R"rawliteral(
     position: absolute;
     left:300px;
     top: 540px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+.accu-box:hover {
+    transform: scale(1.02);
 }
 
 .caption {
@@ -277,7 +282,7 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 
 .caption-line-load-2 {
    left: 535px; 
-   top: 137px;
+   top: 33px;
 }
 
 .mppt-1 {
@@ -366,6 +371,23 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 .charger-power-on{
     color: #eFc700;
 }
+.charger-mode{
+    position: absolute;
+    right: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #777;
+    letter-spacing: 0.5px;
+}
+.charger-mode-manual{
+    top: 4px;
+}
+.charger-mode-auto{
+    top: 26px;
+}
+.charger-mode.active{
+    color: #eFc700;
+}
 .charger-label{
     position: absolute;
     left: 40px; 
@@ -387,17 +409,10 @@ const char htmlPage[] PROGMEM = R"rawliteral(
     height: 66px;
 }
 
-.line-load-internal{
-    position: absolute;
-    left:473px;
-    top: -110px;
-    width: 172px;
-}
-
 .line-load-main{
     position: absolute;
     left:473px;
-    top: -15px;
+    top: -110px;
     width: 172px;
 }
 
@@ -408,12 +423,8 @@ const char htmlPage[] PROGMEM = R"rawliteral(
     width: 146px;
 }
 
-.load-1{
-    top: 10px;
-    left: 645px;
-}
 .load-2{
-    top: 115px;
+    top: 10px;
     left: 645px;
 }
 .load-3{
@@ -584,8 +595,114 @@ const char htmlPage[] PROGMEM = R"rawliteral(
   100% { opacity: 1; }
 }
 
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.energy-bar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 800px;
+}
+
+.energy-chip {
+    background: transparent;
+    color: #2b92cd;
+    border: 2px solid #2b92cd;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 18px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.energy-chip .energy-icon {
+    margin-right: 3px;
+}
+
+.energy-chip .energy-label {
+    font-weight: normal;
+    font-size: 16px;
+    margin-right: 3px;
+    opacity: 0.85;
+}
+
+.energy-chip.consumed-summary {
+    color: #cd6b2b;
+    border-color: #cd6b2b;
+}
+
+.energy-chip.battery-summary {
+    color: #2ba85e;
+    border-color: #2ba85e;
+}
+
+.settings-link {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    text-decoration: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.2s ease;
+    z-index: 10;
+}
+.settings-link:hover {
+    transform: scale(1.1) rotate(20deg);
+}
+
+.balance-indicator {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: none;
+    z-index: 5;
+}
+/* Одинаковый импульс и интервал мигания для warn и crit — различаются только цветом */
+.balance-indicator.warn,
+.balance-indicator.crit {
+    display: block;
+    animation: balance-blink 1.2s infinite;
+}
+.balance-indicator.warn {
+    background: #FFC107;
+    box-shadow: 0 0 6px #FFC107;
+}
+.balance-indicator.crit {
+    background: #cd2b4a;
+    box-shadow: 0 0 6px #cd2b4a;
+}
+@keyframes balance-blink {
+    0%, 65% { opacity: 1; }
+    70%, 95% { opacity: 0.1; }
+    100% { opacity: 1; }
+}
+
 </style>
 </head>
+<div class="page-wrapper">
+<div style="align-self: flex-end; margin-bottom: -4px;">
+  <a href="/m" style="font-size:13px;color:#888;text-decoration:none;margin-right:12px;">📱 mobile</a>
+  <a href="/bms" style="font-size:13px;color:#888;text-decoration:none;margin-right:12px;">🔋 BMS</a>
+  <a href="/settings" style="font-size:13px;color:#888;text-decoration:none;">⚙️ Настройки</a>
+</div>
 <div style="border: 1px #ddd solid; width: 800px; height: 718px; position: relative;">
 
 <div class="mppt-box mppt-1 disabled">
@@ -622,6 +739,8 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 
 <div class="charger">
     <span class="charger-power charger-power-on">⚡&#xFE0E</span>
+    <span class="charger-mode charger-mode-manual">manual</span>
+    <span class="charger-mode charger-mode-auto">auto</span>
     <span class="charger-switch" id="chargerBtn">⏻</span>
     <span class="charger-label">CHARGER</span>
 </div>
@@ -637,7 +756,8 @@ const char htmlPage[] PROGMEM = R"rawliteral(
     <div class="caption-busbar busbar-caption-voltage"></div>
 </div>
 
-<div class="accu-box lvl-green bms-1">
+<div class="accu-box lvl-green bms-1" onclick="location.href='/bms'" title="BMS">
+    <span class="balance-indicator"></span>
     <div class="battery">
         <div class="level">
             <div class="bar"></div>
@@ -656,11 +776,6 @@ const char htmlPage[] PROGMEM = R"rawliteral(
     <div class="text-line" style='color:#eee'><span class="battery-voltage">0.0</span> V <span class="battery-current">0.0</span> A</div>
 </div>
 
-<div class="load load-1">
-    <div class="load-switch switch-on switch-disabled">⏻</div>
-    <div class="load-type">12V to 5V</div>
-    <div class="load-name">5V Load</div>
-</div>
 <div class="load load-2">
     <div class="load-switch switch-on switch-disabled">⏻</div>
     <div class="load-type">12V</div>
@@ -679,7 +794,6 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 <div class="flow flow-container-vertical line-charger stopped"></div>
 
 <div class="flow flow-container-vertical line-battery line-bms-1 stopped"></div>
-<div class="flow flow-container line-load-internal"></div>
 <div class="flow flow-container line-load-main"></div>
 
 <div class="caption caption-mppt-1 hidden"></div>
@@ -688,8 +802,27 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 <div class="caption caption-mppt-4 hidden"></div>        
 <div class="caption caption-charger hidden">2.5A</div>
 <div class="caption caption-bms-1">2.5A</div>
-<div class="caption caption-line-load-1">0.09 A</div>
 <div class="caption caption-line-load-2">1.29 A</div>
+
+</div>
+
+<div class="energy-bar">
+    <div class="energy-chip">
+        <span class="energy-icon">☀️</span>
+        <span class="energy-label">Выработано:</span>
+        <span class="energy-value">--</span> Втч
+    </div>
+    <div class="energy-chip consumed-summary">
+        <span class="energy-icon">⚡</span>
+        <span class="energy-label">Потреблено:</span>
+        <span class="consumed-value">--</span> Втч
+    </div>
+    <div class="energy-chip battery-summary">
+        <span class="energy-icon">🔋</span>
+        <span class="energy-label">Получено/Отдано:</span>
+        <span class="charged-value">--</span>/<span class="discharged-value">--</span> Втч
+    </div>
+</div>
 
 </div>
     
@@ -766,8 +899,22 @@ const char htmlPage[] PROGMEM = R"rawliteral(
           const device = bms[key];
           container.querySelector('.battery-voltage').innerText = device.voltage;
           container.querySelector('.battery-current').innerText = device.current;
-          container.querySelector('.charge-value').innerText = device.level_percent + ' %';
+          container.querySelector('.charge-value').innerText = Math.round(device.level_percent) + ' %';
           caption.innerText = device.current + ' A';
+
+          // Индикатор разбалансировки ячеек (только для LFP с валидными данными — иначе delta равна 0)
+          const indicator = container.querySelector('.balance-indicator');
+          if (indicator) {
+              const delta = parseFloat(device.cellDeltaMv) || 0;
+              const warn = parseFloat(device.cellWarnMv) || 0;
+              const crit = parseFloat(device.cellCritMv) || 0;
+              indicator.classList.remove('warn', 'crit');
+              if (crit > 0 && delta >= crit) {
+                  indicator.classList.add('crit');
+              } else if (warn > 0 && delta >= warn) {
+                  indicator.classList.add('warn');
+              }
+          }
           
           // Находим все элементы с классом bar внутри уровня заряда
           const bars = container.querySelectorAll('.bar');
@@ -840,10 +987,23 @@ const char htmlPage[] PROGMEM = R"rawliteral(
           switchCharge.classList.remove('charger-power-on');
           chargerLine.classList.add('stopped');
       }
+
+      // Надписи manual/auto: загораются жёлтым только когда реле реально включено по соответствующей
+      // причине; надпись auto скрывается целиком, если автоматика отключена в настройках
+      const modeManual = document.querySelector('.charger-mode-manual');
+      const modeAuto = document.querySelector('.charger-mode-auto');
+      modeManual.classList.toggle('active', charger.source === 'manual');
+      if (charger.automationEnabled) {
+          modeAuto.classList.remove('hidden');
+          modeAuto.classList.toggle('active', charger.source === 'auto');
+      } else {
+          modeAuto.classList.add('hidden');
+      }
       
       const load = json.load;
-      document.querySelector('.caption-line-load-1').innerText = load.dc + ' A';
-      document.querySelector('.caption-line-load-2').innerText = load.main + ' A';
+      // Единая нагрузка: суммарный ток 12V + 5V (как на мобильной странице)
+      const loadTotal = Math.abs(parseFloat(load.main) || 0) + Math.abs(parseFloat(load.dc) || 0);
+      document.querySelector('.caption-line-load-2').innerText = loadTotal.toFixed(2) + ' A';
       document.querySelector('#mains-input').innerText = '~' + load.mainsVoltage + ' V';
       if(load.mainsStatus == 'on'){
           document.querySelector('.mains-status').classList.add('charger-power-on');
@@ -851,6 +1011,13 @@ const char htmlPage[] PROGMEM = R"rawliteral(
           document.querySelector('.mains-status').classList.remove('charger-power-on');
       }
       
+      const energy = json.energy;
+      if (energy) {
+          document.querySelector('.energy-value').innerText = energy.today_wh;
+          document.querySelector('.consumed-value').innerText = energy.consumed_today_wh;
+          document.querySelector('.charged-value').innerText = energy.battery_charged_today_wh;
+          document.querySelector('.discharged-value').innerText = energy.battery_discharged_today_wh;
+      }
       
     })
       .catch(err => {
@@ -878,6 +1045,7 @@ const char htmlPage[] PROGMEM = R"rawliteral(
             } else {
                 switchCharge.classList.remove('charger-power-on');
             }
+            updateData(); // сразу обновить и надписи manual/auto, не дожидаясь очередного тика
         })
         .catch(err => alert('Ошибка связи'));
   };
